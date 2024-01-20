@@ -15,7 +15,6 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -26,7 +25,6 @@ SECRET_KEY = 'django-insecure-x%4)319#8ifv&b4l63(!($13(*iid^se1jl7a=vd8h(kif^jby
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -40,7 +38,18 @@ INSTALLED_APPS = [
     'rest_framework',
     'products'
 ]
-
+QUERYCOUNT = {
+    'THRESHOLDS': {
+        'MEDIUM': 50,
+        'HIGH': 200,
+        'MIN_TIME_TO_LOG': 0,
+        'MIN_QUERY_COUNT_TO_LOG': 0
+    },
+    'IGNORE_REQUEST_PATTERNS': [],
+    'IGNORE_SQL_PATTERNS': [],
+    'DISPLAY_DUPLICATES': None,
+    'RESPONSE_HEADER': 'X-DjangoQueryCount-Count'
+}
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -49,6 +58,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'querycount.middleware.QueryCountMiddleware',
 ]
 
 ROOT_URLCONF = 'market_place.urls'
@@ -72,7 +82,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'market_place.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
@@ -82,7 +91,6 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -102,7 +110,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
@@ -113,7 +120,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/

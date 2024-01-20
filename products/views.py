@@ -19,7 +19,9 @@ def product_detail_api_view(request, id):
 @api_view(['GET'])
 def product_list_api_view(request):
     # Step 1: Collect data of products from DB
-    products = Product.objects.all()
+    products = Product.objects\
+        .select_related('category')\
+        .prefetch_related('tags', 'reviews').all()
 
     # Step 2: Reformat(Serialize) of products
     data = ProductSerializer(products, many=True).data
