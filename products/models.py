@@ -27,11 +27,11 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'{self.title} - {self.price}$ - {self.category.name}'
+        return f'{self.title} - {self.price}$ - {self.category_name}'
 
     @property
     def category_name(self):
-        return self.category.name
+        return self.category.name if self.category_id else 'no_category'
 
 
 STAR_CHOICES = (
