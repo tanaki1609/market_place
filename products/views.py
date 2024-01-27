@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Product
-from .serializers import ProductSerializer
+from .serializers import ProductSerializer, ProductValidateSerializer
 from rest_framework import status
 
 
@@ -19,13 +19,16 @@ def product_detail_api_view(request, id):
         product.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     elif request.method == 'PUT':
-        product.title = request.data.get('title')
-        product.description = request.data.get('description')
-        product.price = request.data.get('price')
-        product.in_stock = request.data.get('in_stock')
-        product.is_active = request.data.get('is_active')
-        product.category_id = request.data.get('category_id')
-        product.tags.set(request.data.get('tags'))
+        serializer = ProductValidateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        product.title = serializer.validated_data.get('title')
+        product.description = serializer.validated_data.get('description')
+        product.price = serializer.validated_data.get('price')
+        product.in_stock = serializer.validated_data.get('in_stock')
+        product.is_active = serializer.validated_data.get('is_active')
+        product.category_id = serializer.validated_data.get('category_id')
+        product.tags.set(serializer.validated_data.get('tags'))
         product.save()
         return Response(data={'product_id': product.id}, status=status.HTTP_201_CREATED)
 
@@ -33,10 +36,12 @@ def product_detail_api_view(request, id):
 @api_view(['GET', 'POST'])
 def product_list_api_view(request):
     if request.method == 'GET':
+        print(request.query_params)
         # Step 1: Collect data of products from DB
         products = Product.objects \
             .select_related('category') \
-            .prefetch_related('tags', 'reviews').all()
+            .prefetch_related('tags', 'reviews')\
+            .filter(title__contains=request.query_params.get('search_word', ''))
 
         # Step 2: Reformat(Serialize) of products
         data = ProductSerializer(products, many=True).data
@@ -44,14 +49,19 @@ def product_list_api_view(request):
         # Step 3: Return data as JSON
         return Response(data=data)
     elif request.method == 'POST':
+        # Step 0. Validate data
+        serializer = ProductValidateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data=serializer.errors)
         # Step 1. Get data from request body
-        title = request.data.get('title')
-        description = request.data.get('description')
-        price = request.data.get('price')
-        in_stock = request.data.get('in_stock')
-        is_active = request.data.get('is_active')
-        category_id = request.data.get('category_id')
-        tags = request.data.get('tags')
+        title = serializer.validated_data.get('title')
+        description = serializer.validated_data.get('description')
+        price = serializer.validated_data.get('price')
+        in_stock = serializer.validated_data.get('in_stock')
+        is_active = serializer.validated_data.get('is_active') # "y"
+        category_id = serializer.validated_data.get('category_id')
+        tags = serializer.validated_data.get('tags')
 
         # Step 2. Create product by received data
         product = Product.objects.create(title=title, description=description,
