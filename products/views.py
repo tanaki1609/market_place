@@ -35,8 +35,8 @@ def product_detail_api_view(request, id):
 
 @api_view(['GET', 'POST'])
 def product_list_api_view(request):
+    print(request.user)
     if request.method == 'GET':
-        print(request.query_params)
         # Step 1: Collect data of products from DB
         products = Product.objects \
             .select_related('category') \
