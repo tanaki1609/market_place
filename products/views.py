@@ -1,8 +1,33 @@
+from django.db.models import QuerySet
 from rest_framework.decorators import api_view
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
-from .models import Product
-from .serializers import ProductSerializer, ProductValidateSerializer
+from rest_framework.viewsets import ModelViewSet
+
+from .models import Product, Tag, Category
+from .serializers import ProductSerializer, ProductValidateSerializer, \
+    TagSerializer, CategorySerializer
 from rest_framework import status
+
+
+class CategoryModelViewSet(ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    pagination_class = PageNumberPagination
+    lookup_field = 'id'
+
+
+class TagListCreateAPIView(ListCreateAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    pagination_class = PageNumberPagination
+
+
+class TagDetailAPIView(RetrieveUpdateDestroyAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    lookup_field = 'id'
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
@@ -33,6 +58,37 @@ def product_detail_api_view(request, id):
         return Response(data={'product_id': product.id}, status=status.HTTP_201_CREATED)
 
 
+class ProductListCreateAPIView(ListCreateAPIView):
+    queryset = Product.objects \
+        .select_related('category') \
+        .prefetch_related('tags', 'reviews').all()
+    serializer_class = ProductSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = ProductValidateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data=serializer.errors)
+        # Step 1. Get data from request body
+        title = serializer.validated_data.get('title')
+        description = serializer.validated_data.get('description')
+        price = serializer.validated_data.get('price')
+        in_stock = serializer.validated_data.get('in_stock')
+        is_active = serializer.validated_data.get('is_active')  # "y"
+        category_id = serializer.validated_data.get('category_id')
+        tags = serializer.validated_data.get('tags')
+
+        # Step 2. Create product by received data
+        product = Product.objects.create(title=title, description=description,
+                                         price=price, in_stock=in_stock,
+                                         is_active=is_active, category_id=category_id)
+        product.tags.set(tags)
+        product.save()
+
+        # Step 3. Return response with created data and status
+        return Response(data={'product_id': product.id}, status=status.HTTP_201_CREATED)
+
+
 @api_view(['GET', 'POST'])
 def product_list_api_view(request):
     print(request.user)
@@ -40,7 +96,7 @@ def product_list_api_view(request):
         # Step 1: Collect data of products from DB
         products = Product.objects \
             .select_related('category') \
-            .prefetch_related('tags', 'reviews')\
+            .prefetch_related('tags', 'reviews') \
             .filter(title__contains=request.query_params.get('search_word', ''))
 
         # Step 2: Reformat(Serialize) of products
@@ -59,7 +115,7 @@ def product_list_api_view(request):
         description = serializer.validated_data.get('description')
         price = serializer.validated_data.get('price')
         in_stock = serializer.validated_data.get('in_stock')
-        is_active = serializer.validated_data.get('is_active') # "y"
+        is_active = serializer.validated_data.get('is_active')  # "y"
         category_id = serializer.validated_data.get('category_id')
         tags = serializer.validated_data.get('tags')
 
