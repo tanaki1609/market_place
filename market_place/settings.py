@@ -38,7 +38,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'products',
     'rest_framework.authtoken',
-    'users'
+    'users',
+    'drf_yasg'
 ]
 QUERYCOUNT = {
     'THRESHOLDS': {
